@@ -1,0 +1,202 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>动态代理的使用与各个参数的意义 | Hve Notes</title>
+<link rel="shortcut icon" href="https://liuyu0102.github.io/favicon.ico">
+<link rel="stylesheet" href="https://liuyu0102.github.io/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <div class="site-header">
+  <a href="https://liuyu0102.github.io">
+  <img class="avatar" src="https://liuyu0102.github.io/images/avatar.png" alt="" width="80px" height="80px">
+  </a>
+  <h1 class="site-title">
+    Hve Notes
+  </h1>
+  <p class="site-description">
+    <b>温故而知新</b>
+  </p>
+  <div class="menu-container">
+    
+      
+        <a href="/" class="menu">
+          首页
+        </a>
+      
+    
+      
+        <a href="/archives" class="menu">
+          归档
+        </a>
+      
+    
+      
+        <a href="/tags" class="menu">
+          标签
+        </a>
+      
+    
+      
+        <a href="/post/about" class="menu">
+          关于
+        </a>
+      
+    
+  </div>
+</div>
+
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              动态代理的使用与各个参数的意义
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 2019-04-03 ·
+              </time>
+              
+            </div>
+            <div class="post-content">
+              <p>动态代理:在不改变源码的情况下,对已有的方法进行增强(运行期增强),直接上代码,用法都在注释里,场景:定义一个演员类,演员可以做普通表演和危险表演,对演员类的方法进行增强</p>
+<pre><code>final ActerImpl acter = new ActerImpl();
+    /**
+     * 动态代理:
+     *      作用:在不改变源码的情况下,对已有的方法进行增强
+     *      特点:字节码随用随创建,随用随加载
+     *      分类:基于接口的动态代理
+     *           基于子类的动态代理
+     *      基于接口的动态代理:
+     *      要求:被代理类至少实现一个接口
+     *      涉及类:proxy
+     *      提供者:jdk
+     *      创建对象的方法:newProxyInstance
+     *   方法的参数:
+  类加载器:ClassLoader,加载代理对象字节码,和被代理对象用一个类加载器
+     *   字节码数组:Class[] 代理对象和被代理对象要具有相同的行为,实现相同接口
+     *     如果被代理对象是一个实现类:对象.getClass().getinterfaces()
+     *     如果被代理对象是一个接口:new Class[]{interface}
+     *   增强方法的接口:InvocationHandler,如何增强,如何代理
+     */
+    Acter proxyActer =(Acter) Proxy.newProxyInstance(acter.getClass().getClassLoader(),
+            acter.getClass().getInterfaces(),
+            new InvocationHandler() {
+                /**
+                 * 作用:被代理对象执行每一个方法都会执行该方法,具有拦截功能
+                 * @param proxy     代理对象的引用
+                 * @param method    当前执行的方法
+                 * @param args      执行当前方法所需要的参数
+                 * @return
+                 * @throws Throwable
+                 */
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    //获取参数
+                    Float money = (Float) args[0];
+                    Object rtValue = null;
+                    if (&quot;basicAct&quot;.equals(method.getName())){
+                        if (money &gt; 10000){
+                            rtValue = method.invoke(acter,money*0.85f);//第一个参数:哪个对象的方法.第个二参数:执行方法所需要的参数
+                        }
+                    }
+                    if (&quot;dangerAct&quot;.equals(method.getName())){
+                        if (money &gt; 50000){
+                            rtValue = method.invoke(acter,money*0.9f);//第一个参数:哪个对象的方法.第个二参数:执行方法所需要的参数
+                        }
+                    }
+                    return rtValue;
+                }
+            });
+
+    proxyActer.basicAct(20000f);
+    proxyActer.dangerAct(55000f);
+}
+----------------------------------------------------------------------------
+final ActerImpl acter = new ActerImpl();
+/**
+ * 动态代理:
+ *      作用:在不改变源码的情况下,对已有的方法进行增强
+ *      特点:字节码随用随创建,随用随加载
+ *      分类:基于接口的动态代理
+ *           基于子类的动态代理
+ *      基于子类的动态代理:
+ *              要求:被代理类不能是最终类
+ *              涉及类:Enhancer
+ *              提供者:cglib
+ *              创建对象的方法:create
+ *              方法的参数:
+ *                      Class:加载代理对象字节码,使用的是被代理对象的字节码
+ *                      Callback:增强方法的接口,和invocationhandler作用一样
+ *                      allback是顶层接口,我们需要new MethodInterceptor
+ */
+ActerImpl cglibActer = (ActerImpl) Enhancer.create(acter.getClass(), new MethodInterceptor() {
+    /**
+     *代理对象的每个方法都会执行当前方法  拦截
+     * @param proxy             代理类对象引用
+     * @param method            当前执行的方法
+     * @param args              执行当前方法需要的参数
+     * @param methodProxy       执行当前方法的代理类对象
+     * @return
+     * @throws Throwable
+     */
+    public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+        //获取参数
+        Float money = (Float) args[0];
+        Object rtValue = null;
+        if (&quot;basicAct&quot;.equals(method.getName())){
+            if (money &gt; 10000){
+                rtValue = method.invoke(acter,money*0.85f);//第一个参数:哪个对象的方法.第个二参数:执行方法所需要的参数
+            }
+        }
+        if (&quot;dangerAct&quot;.equals(method.getName())){
+            if (money &gt; 50000){
+                rtValue = method.invoke(acter,money*0.9f);//第一个参数:哪个对象的方法.第个二参数:执行方法所需要的参数
+            }
+        }
+        return rtValue;
+    }
+});
+cglibActer.basicAct(20000f);
+cglibActer.dangerAct(60000f);
+--------------------- 
+作者：UTF-8LLLLLL 
+来源：CSDN 
+原文：https://blog.csdn.net/UTFLLLLy/article/details/84713504 
+版权声明：本文为博主原创文章，转载请附上博文链接！</code></pre>
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://liuyu0102.github.io/post/hello-hve-notes">
+              <h3 class="post-title">
+                Hello Hve Notes
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+    
+        <div class="site-footer">
+  Powered by Hve Notes
+</div>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+
+      </div>
+    </div>
+  </body>
+</html>
